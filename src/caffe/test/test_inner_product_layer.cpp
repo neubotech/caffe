@@ -26,8 +26,11 @@ class InnerProductLayerTest : public ::testing::Test {
     // fill the values
     FillerParameter filler_param;
     UniformFiller<Dtype> filler(filler_param);
+    //filling the input with uniformly random numbers
     filler.Fill(this->blob_bottom_);
+    //add blob_bottom to blob_bottom_vec_
     blob_bottom_vec_.push_back(blob_bottom_);
+    //add blob_top to blob_top_vec_
     blob_top_vec_.push_back(blob_top_);
   }
   virtual ~InnerProductLayerTest() { delete blob_bottom_; delete blob_top_; }
@@ -40,10 +43,13 @@ class InnerProductLayerTest : public ::testing::Test {
 typedef ::testing::Types<float, double> Dtypes;
 TYPED_TEST_CASE(InnerProductLayerTest, Dtypes);
 
+//TYPED_TEST??
+
 TYPED_TEST(InnerProductLayerTest, TestSetUp) {
   LayerParameter layer_param;
   InnerProductParameter* inner_product_param =
       layer_param.mutable_inner_product_param();
+  //set the output layer num to be 10? 
   inner_product_param->set_num_output(10);
   shared_ptr<InnerProductLayer<TypeParam> > layer(
       new InnerProductLayer<TypeParam>(layer_param));
