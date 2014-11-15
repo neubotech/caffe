@@ -15,6 +15,7 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
   for (int i = 0; i < bottom.size(); ++i) {
     const Dtype* bottom_data = bottom[i]->gpu_data();
     Dtype* top_data = (*top)[i]->mutable_gpu_data();
+    Dtype* top_temp = (*top)[i]->mutable_gpu_data();
     Dtype* col_data = col_buffer_.mutable_gpu_data();
     const Dtype* weight = this->blobs_[0]->gpu_data();
     int weight_offset = M_ * K_;
