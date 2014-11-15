@@ -18,20 +18,44 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     Dtype* col_data = col_buffer_.mutable_gpu_data();
     const Dtype* weight = this->blobs_[0]->gpu_data();
     int weight_offset = M_ * K_;
-    int col_offset = K_ * N_;
-    int top_offset = M_ * N_;
-    for (int n = 0; n < num_; ++n) {
-      // im2col transformation: unroll input regions for filtering
-      // into column matrix for multplication.
-      im2col_gpu(bottom_data + bottom[i]->offset(n), channels_, height_,
-          width_, kernel_h_, kernel_w_, pad_h_, pad_w_, stride_h_, stride_w_,
-          col_data);
-      // Take inner products for groups.
-      for (int g = 0; g < group_; ++g) {
-        caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, K_,
-          (Dtype)1., weight + weight_offset * g, col_data + col_offset * g,
-          (Dtype)0., top_data + (*top)[i]->offset(n) + top_offset * g);
+    int v = 1;
+    int col_offset = K_ * N_ ;
+    int top_offset = M_ * N_ ;
+
+    //cs194 experimental
+    int total_B_col = N_ * num_;
+    int col_image_offset = col_buffer_.count()/num_;
+    //tuning parameter
+     //real size of N for gemm is total_B_col/v
+    //then the size of col_data = v * K_ * N_
+
+    
+    for (int g = 0; g < group_; g++) {
+      for (int n = 0; n < num_; n++) {
+        // im2col transformation: unroll input regions for filtering
+        // into column matrix for multplication.
+        // printf("col_data->count(): %d", col_buffer_.count()/num_);
+        im2col_gpu(bottom_data + bottom[i]->offset(n), channels_, height_,
+            width_, kernel_h_, kernel_w_, pad_h_, pad_w_, stride_h_, stride_w_,
+            col_data + col_image_offset*n);
       }
+      for (int n = 0; n < num_; n++) {
+        caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, K_,
+          (Dtype)1., weight + weight_offset * g, col_data + col_image_offset*n + col_offset * g,   
+          (Dtype)0., top_data + (*top)[i]->offset(n) + top_offset * g);        
+      }
+    //   for (int n = 0; n < num_; n++) {
+    //   for (int j = 0; j < v; j++) {
+    //     // Take inner products for groups.
+    //     caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_/v, K_,
+    //         (Dtype)1., weight + weight_offset * g, col_data + col_offset * g + col_image_offset/v*j,
+    //         (Dtype)0., top_data + (*top)[i]->offset(n) + top_offset * g + j*(M_*N_/v));
+    //   } 
+    // }
+    }
+
+
+    for (int n = 0; n < num_; n++) {
       // Add bias.
       if (bias_term_) {
         caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, num_output_,
