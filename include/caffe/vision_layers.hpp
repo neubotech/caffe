@@ -108,6 +108,8 @@ class ConvolutionLayer : public Layer<Dtype> {
   /// dimensions of the data and filter matrices.
   int N_;
   Blob<Dtype> col_buffer_;
+  Blob<Dtype> col_temp_buffer_;
+  Blob<Dtype> top_buffer_;
   Blob<Dtype> bias_multiplier_;
 };
 

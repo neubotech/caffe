@@ -128,6 +128,12 @@ void ConvolutionLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   
   col_buffer_.Reshape(
       num_, channels_ * kernel_h_ * kernel_w_, height_out_, width_out_);
+
+  col_temp_buffer_.Reshape(
+      num_, channels_ * kernel_h_ * kernel_w_ / group_ , height_out_, width_out_);
+
+  top_buffer_.Reshape(num_, num_output_ / group_ , height_out_, width_out_);
+
   for (int top_id = 0; top_id < top->size(); ++top_id) {
     (*top)[top_id]->Reshape(num_, num_output_, height_out_, width_out_);
   }
@@ -146,6 +152,7 @@ void ConvolutionLayer<Dtype>::Forward_cpu(const vector<Blob<Dtype>*>& bottom,
     const Dtype* bottom_data = bottom[i]->cpu_data();
     Dtype* top_data = (*top)[i]->mutable_cpu_data();
     Dtype* col_data = col_buffer_.mutable_cpu_data();
+
     const Dtype* weight = this->blobs_[0]->cpu_data();
     int weight_offset = M_ * K_;  // number of filter parameters in a group
     int col_offset = K_ * N_;  // number of values in an input region / column
