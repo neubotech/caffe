@@ -176,9 +176,11 @@ class ConstantStrideFiller : public Filler<Dtype> {
     for (int i = start; i < end; i+=stride) {
       data[i] = value;
     }
-    //for (int i = 0; i < count; i++){
-    //  printf("%.2f ", data[i]);
-    //}
+    printf("start: %d, end: %d, count: %d\n", start, end, count);
+    for (int i = 0; i < count; i++){
+      printf("%.2f ", data[i]);
+    }
+    printf("\n");
     CHECK_EQ(this->filler_param_.sparse(), -1)
          << "Sparsity not supported by this Filler.";
   }
