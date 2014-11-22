@@ -167,8 +167,8 @@ TYPED_TEST(CuDNNConvolutionLayerGroupTest, TestConvolutionGroupCuDNN) {
   convolution_param->mutable_bias_filler()->set_value(0.1);
   shared_ptr<Layer<TypeParam> > layer(
       new CuDNNConvolutionLayer<TypeParam>(layer_param));
-  layer->SetUp(this->blob_bottom_vec_, &(this->blob_top_vec_));
-  layer->Forward(this->blob_bottom_vec_, &(this->blob_top_vec_));
+  layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+  layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
   // Check against reference convolution.
   const TypeParam* top_data;
   const TypeParam* ref_top_data;
@@ -255,8 +255,8 @@ TYPED_TEST(CuDNNConvolutionLayerGroupTest2, TestConvolutionGroupCuDNN) {
   convolution_param->mutable_bias_filler()->set_value(0.1);
   shared_ptr<Layer<TypeParam> > layer(
       new CuDNNConvolutionLayer<TypeParam>(layer_param));
-  layer->SetUp(this->blob_bottom_vec_, &(this->blob_top_vec_));
-  layer->Forward(this->blob_bottom_vec_, &(this->blob_top_vec_));
+  layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+  layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
   // Check against reference convolution.
   const TypeParam* top_data;
   const TypeParam* ref_top_data;
@@ -341,8 +341,8 @@ TYPED_TEST(CuDNNConvolutionLayerGroupTest3, TestConvolutionGroupCuDNN) {
   convolution_param->mutable_bias_filler()->set_value(0.1);
   shared_ptr<Layer<TypeParam> > layer(
       new CuDNNConvolutionLayer<TypeParam>(layer_param));
-  layer->SetUp(this->blob_bottom_vec_, &(this->blob_top_vec_));
-  layer->Forward(this->blob_bottom_vec_, &(this->blob_top_vec_));
+  layer->SetUp(this->blob_bottom_vec_, this->blob_top_vec_);
+  layer->Forward(this->blob_bottom_vec_, this->blob_top_vec_);
   // Check against reference convolution.
   const TypeParam* top_data;
   const TypeParam* ref_top_data;
