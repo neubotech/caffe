@@ -20,7 +20,7 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     Dtype* col_data = col_buffer_.mutable_gpu_data();
     const Dtype* weight = this->blobs_[0]->gpu_data();
     int weight_offset = M_ * K_;
-    int v = 1;
+    int v = 2;
     int col_offset = K_ * N_ ;
     int top_offset = M_ * N_ ;
 
@@ -39,31 +39,43 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     
     for (int g = 0; g < group_; g++) {
       //run multiple image together
-      // for (int n = 0; n < num_; n++) {
-      //   caffe_copy(col_offset, col_data + col_image_offset * n + col_offset * g, 
-      //     col_temp_data + col_offset * n);         
-      // }
+      for(int vv = 0; vv<v; vv++){
+        for (int n = 0; n < num_/v; n++) {
+          for (int k = 0; k < K_; k++){
+            caffe_copy(N_, col_data + col_image_offset * (n+ num_/v*vv) + col_offset * g + N_ * k, 
+            col_temp_data + num_*N_*k/v + n*N_); 
+          }        
+        }
+        
+        caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_*num_/v, K_,
+          (Dtype)1., weight + weight_offset * g, col_temp_data,   
+          (Dtype)0., top_temp_data); 
 
-      // caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_*num_, K_,
+        for (int n = 0; n < num_/v; n++) {
+          for (int m = 0; m < M_; m++){
+            caffe_copy(N_, top_temp_data + num_ * N_ * m/v + n * N_, 
+            top_data + (*top)[i]->offset(n+num_/v*vv) + top_offset * g + m*N_);  
+          }
+        }
+      }
+
+      // caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_*num_/v, K_,
       //   (Dtype)1., weight + weight_offset * g, col_temp_data,   
       //   (Dtype)0., top_temp_data); 
+
+
+
+      //run a single image at a time
+      // for (int n = 0; n < num_; n++) {
+      //   caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, K_,
+      //     (Dtype)1., weight + weight_offset * g, col_data + col_image_offset * n + col_offset * g,   
+      //     (Dtype)0., top_temp_data +  top_offset * n);  
+      // }
 
       // for (int n = 0; n < num_; n++){
       //   caffe_copy(top_offset, top_temp_data + top_offset * n, 
       //     top_data + (*top)[i]->offset(n) + top_offset * g);     
       // }
-
-      //run a single image at a time
-      for (int n = 0; n < num_; n++) {
-        caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, K_,
-          (Dtype)1., weight + weight_offset * g, col_data + col_image_offset * n + col_offset * g,   
-          (Dtype)0., top_temp_data +  top_offset * n);  
-      }
-
-      for (int n = 0; n < num_; n++){
-        caffe_copy(top_offset, top_temp_data + top_offset * n, 
-          top_data + (*top)[i]->offset(n) + top_offset * g);     
-      }
  
 
     //   for (int n = 0; n < num_; n++) {
