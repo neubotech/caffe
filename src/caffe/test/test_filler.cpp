@@ -142,4 +142,38 @@ TYPED_TEST(GaussianFillerTest, TestFill) {
   EXPECT_LE(var, target_var * 5.);
 }
 
+template <typename Dtype>
+class ConstantStrideFillerTest : public ::testing::Test {
+ protected:
+  ConstantStrideFillerTest()
+      : blob_(new Blob<Dtype>(2, 3, 4, 5)),
+        filler_param_() {
+    filler_param_.set_stride(2);
+    filler_param_.set_start(blob_->offset(0, 1, 1, 1));
+    filler_param_.set_end(blob_->offset(1, 2, 2, 2));
+    filler_param_.set_value(1.);
+    filler_.reset(new ConstantStrideFiller<Dtype>(filler_param_));
+    filler_->Fill(blob_);
+  }
+  virtual ~ConstantStrideFillerTest() { delete blob_; }
+  Blob<Dtype>* const blob_;
+  FillerParameter filler_param_;
+  shared_ptr<ConstantStrideFiller<Dtype> > filler_;
+};
+
+TYPED_TEST_CASE(ConstantStrideFillerTest, TestDtypes);
+
+TYPED_TEST(ConstantStrideFillerTest, TestFill) {
+  EXPECT_TRUE(this->blob_);
+  const int count = this->blob_->count();
+  const TypeParam* data = this->blob_->cpu_data();
+  for (int i = 26; i < 112; i+=2) {
+    EXPECT_GE(data[i], 0.999);
+    EXPECT_LE(data[i], 1.001);   
+  }
+
+}
+
+
+
 }  // namespace caffe

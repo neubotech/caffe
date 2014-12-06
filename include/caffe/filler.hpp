@@ -156,6 +156,35 @@ class XavierFiller : public Filler<Dtype> {
          << "Sparsity not supported by this Filler.";
   }
 };
+/*
+ * @brief Fills a blob with constant value, from start to end index, with stride = stride and indices in between stride equal to 0.
+*/
+/// 
+template <typename Dtype>
+class ConstantStrideFiller : public Filler<Dtype> {
+ public:
+  explicit ConstantStrideFiller(const FillerParameter& param)
+      : Filler<Dtype>(param) {}
+  virtual void Fill(Blob<Dtype>* blob) {
+    Dtype* data = blob->mutable_cpu_data();
+    const int count = blob->count();
+    const Dtype value = this->filler_param_.value();
+    const int stride = this->filler_param_.stride();
+    const int start = this->filler_param_.start();
+    const int end = this->filler_param_.end();
+    CHECK(count);
+    for (int i = start; i < end; i+=stride) {
+      data[i] = value;
+    }
+    printf("start: %d, end: %d, count: %d\n", start, end, count);
+    for (int i = 0; i < count; i++){
+      printf("%.2f ", data[i]);
+    }
+    printf("\n");
+    CHECK_EQ(this->filler_param_.sparse(), -1)
+         << "Sparsity not supported by this Filler.";
+  }
+};
 
 
 /**
@@ -177,7 +206,9 @@ Filler<Dtype>* GetFiller(const FillerParameter& param) {
     return new UniformFiller<Dtype>(param);
   } else if (type == "xavier") {
     return new XavierFiller<Dtype>(param);
-  } else {
+  } else if (type == "constant_stride") {
+    return new ConstantStrideFiller<Dtype>(param);
+  }else {
     CHECK(false) << "Unknown filler name: " << param.type();
   }
   return (Filler<Dtype>*)(NULL);

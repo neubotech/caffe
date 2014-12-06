@@ -36,9 +36,13 @@ message FillerParameter {
   optional float max = 4 [default = 1]; // the max value in uniform filler
   optional float mean = 5 [default = 0]; // the mean value in Gaussian filler
   optional float std = 6 [default = 1]; // the std value in Gaussian filler
+  
   // The expected number of non-zero input weights for a given output in
   // Gaussian filler -- the default -1 means don't perform sparsification.
   optional int32 sparse = 7 [default = -1];
+  optional int32 stride = 8 [default = 1]; // the stride value in constant stride filler
+  optional int32 start = 9 [default = 0]; // the start index in constant stride filler
+  optional int32 end = 10 [default = 0]; // the end index in constant stride filler, not inclusive
 }
 
 message NetParameter {
