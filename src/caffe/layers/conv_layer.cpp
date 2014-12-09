@@ -125,14 +125,15 @@ void ConvolutionLayer<Dtype>::Reshape(const vector<Blob<Dtype>*>& bottom,
   // for (int top_id = 0; top_id < top->size(); ++top_id) {
   //   (*top)[top_id]->Reshape(num_, num_output_, height_out_, width_out_);
   // }
+
   
   col_buffer_.Reshape(
-      num_, channels_ * kernel_h_ * kernel_w_, height_out_, width_out_);
+      num_/2, channels_ * kernel_h_ * kernel_w_, height_out_, width_out_);
 
   col_temp_buffer_.Reshape(
-      num_, channels_ * kernel_h_ * kernel_w_ , height_out_, width_out_);
+      num_/2, channels_ * kernel_h_ * kernel_w_ , height_out_, width_out_);
 
-  top_buffer_.Reshape(num_, num_output_ / group_ , height_out_, width_out_);
+  top_buffer_.Reshape(num_/2, num_output_ / group_ , height_out_, width_out_);
 
   for (int top_id = 0; top_id < top->size(); ++top_id) {
     (*top)[top_id]->Reshape(num_, num_output_, height_out_, width_out_);

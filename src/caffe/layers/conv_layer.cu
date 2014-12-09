@@ -10,6 +10,7 @@
 #include "caffe/common.hpp"
 #include "caffe/util/im2row.hpp"
 #include "caffe/util/col2row.hpp"
+#include "caffe/util/col2row1.hpp"
 
 namespace caffe {
 
@@ -30,7 +31,7 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     const Dtype* weight = this->blobs_[0]->gpu_data();
 
     int weight_offset = M_ * K_;
-    int v = 8;
+    int v = 2;
     int col_offset = K_ * N_ ;
     int top_offset = M_ * N_ ;
 
@@ -69,44 +70,33 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     //   }
 
 
-    for (int n = 0; n < num_; n++) {
-      im2col_gpu(bottom_data + bottom[i]->offset(n), channels_, height_,
-          width_, kernel_h_, kernel_w_, pad_h_, pad_w_, stride_h_, stride_w_,
-          col_data + col_image_offset*n);
-    }
+    // for (int n = 0; n < num_; n++) {
+    //   im2col_gpu(bottom_data + bottom[i]->offset(n), channels_, height_,
+    //       width_, kernel_h_, kernel_w_, pad_h_, pad_w_, stride_h_, stride_w_,
+    //       col_data + col_image_offset*n);
+    // }
 
-    col2row_gpu(col_data, N_, K_, num_, group_, col_temp_data);
+    // col2row_gpu(col_data, N_, K_, num_, group_, col_temp_data);
 
     for(int vv = 0; vv<v; vv++){  
-      
+      for (int n = 0; n < num_/v; n++) {
+        im2col_gpu(bottom_data + bottom[i]->offset(n+num_/v*vv), channels_, height_,
+            width_, kernel_h_, kernel_w_, pad_h_, pad_w_, stride_h_, stride_w_,
+            col_data + col_image_offset*n);
+      }
+      // col2row_gpu(col_data, N_, K_, num_/v, group_,  col_temp_data);
       for (int g = 0; g < group_; g++) {
-        // for (int n = 0; n < num_/v; n++) {
-        //   for (int k = 0; k < K_; k++){
-
-        //     // CUDA_CHECK(cudaMemcpy(col_temp_data + num_*N_*k/v + n*N_, 
-        //     //   col_data + col_image_offset * (n+ num_/v*vv) + col_offset * g + N_ * k, sizeof(Dtype)*N_, 
-        //     //   cudaMemcpyDeviceToDevice));
-
-        //     caffe_copy(N_, col_data + col_image_offset * (n+ num_/v*vv) + col_offset * g + N_ * k, 
-        //     col_temp_data + num_*N_*k/v + n*N_); 
-        //   }        
-        // }
-
+        col2row1_gpu(col_data, N_, K_, num_/v, group_, g, col_temp_data);
 
         caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_*num_/v, K_,
-          (Dtype)1., weight + weight_offset * g, col_temp_data + col_offset*num_/v*vv + col_offset*num_*g,   
+          (Dtype)1., weight + weight_offset * g, col_temp_data,// + col_offset*num_/v*vv + col_offset*num_*g,   
           (Dtype)0., top_temp_data); 
-        row2col_gpu(top_temp_data, N_, M_, num_/v, num_/v*vv, tmp_topi, top_data + top_offset * g);
-        // for (int n = 0; n < num_/v; n++) {
-        //   for (int m = 0; m < M_; m++){
-        //     // CUDA_CHECK(cudaMemcpy(top_data + (*top)[i]->offset(n+num_/v*vv) + top_offset * g + m*N_, 
-        //     //   top_temp_data + num_ * N_ * m/v + n * N_, sizeof(Dtype)*N_, 
-        //     //   cudaMemcpyDeviceToDevice));
 
-        //     caffe_copy(N_, top_temp_data + num_ * N_ * m/v + n * N_, 
-        //     top_data + (*top)[i]->offset(n+num_/v*vv) + top_offset * g + m*N_);  
-        //   }
-        // }
+        // caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_*num_/v, K_,
+        //   (Dtype)1., weight + weight_offset * g, col_temp_data + col_offset*num_/v*g,   
+        //   (Dtype)0., top_temp_data); 
+
+        row2col_gpu(top_temp_data, N_, M_, num_/v, num_/v*vv, tmp_topi, top_data + top_offset * g);
       }
 
     
