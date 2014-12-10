@@ -38,45 +38,6 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
     //cs194 experimental
     int total_B_col = N_ * num_;
     int col_image_offset = col_buffer_.count()/num_;
-    //tuning parameter
-     //real size of N for gemm is total_B_col/v
-    //then the size of col_data = v * K_ * N_
-
-    // for(int vv = 0; vv<v; vv++){  
-    //   for(int n=0; n<num_/v; n++){
-    //     im2col_gpu(bottom_data + bottom[i]->offset(n+num_/v*vv), channels_, height_,
-    //         width_, kernel_h_, kernel_w_, pad_h_, pad_w_, stride_h_, stride_w_,
-    //         col_data + col_image_offset*n);
-    //   }
-
-    //   for (int g = 0; g < group_; g++) {
-    //     for (int n = 0; n < num_/v; n++) {        
-    //       for (int k = 0; k < K_; k++){
-    //         caffe_copy(N_, col_data + col_image_offset * (n) + col_offset * g + N_ * k, 
-    //         col_temp_data + num_*N_*k/v + n*N_); 
-    //       }
-    //     }
-        
-    //     caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_*num_/v, K_,
-    //       (Dtype)1., weight + weight_offset * g, col_temp_data,   
-    //       (Dtype)0., top_temp_data); 
-
-    //     for (int n = 0; n < num_/v; n++) { 
-    //       for (int m = 0; m < M_; m++){
-    //         caffe_copy(N_, top_temp_data + num_ * N_ * m/v + n * N_, 
-    //         top_data + (*top)[i]->offset(n+num_/v*vv) + top_offset * g + m*N_);  
-    //       }
-    //     }
-    //   }
-
-
-    // for (int n = 0; n < num_; n++) {
-    //   im2col_gpu(bottom_data + bottom[i]->offset(n), channels_, height_,
-    //       width_, kernel_h_, kernel_w_, pad_h_, pad_w_, stride_h_, stride_w_,
-    //       col_data + col_image_offset*n);
-    // }
-
-    // col2row_gpu(col_data, N_, K_, num_, group_, col_temp_data);
 
     for(int vv = 0; vv<v; vv++){  
       for (int n = 0; n < num_/v; n++) {
@@ -84,7 +45,7 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
             width_, kernel_h_, kernel_w_, pad_h_, pad_w_, stride_h_, stride_w_,
             col_data + col_image_offset*n);
       }
-      // col2row_gpu(col_data, N_, K_, num_/v, group_,  col_temp_data);
+      
       for (int g = 0; g < group_; g++) {
         col2row1_gpu(col_data, N_, K_, num_/v, group_, g, col_temp_data);
 
@@ -92,49 +53,8 @@ void ConvolutionLayer<Dtype>::Forward_gpu(const vector<Blob<Dtype>*>& bottom,
           (Dtype)1., weight + weight_offset * g, col_temp_data,// + col_offset*num_/v*vv + col_offset*num_*g,   
           (Dtype)0., top_temp_data); 
 
-        // caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_*num_/v, K_,
-        //   (Dtype)1., weight + weight_offset * g, col_temp_data + col_offset*num_/v*g,   
-        //   (Dtype)0., top_temp_data); 
-
         row2col_gpu(top_temp_data, N_, M_, num_/v, num_/v*vv, tmp_topi, top_data + top_offset * g);
       }
-
-    
-    // for (int g = 0; g < group_; g++) {
-    //   //run multiple image together
-    //   for(int vv = 0; vv<v; vv++){
-    //     for (int n = 0; n < num_/v; n++) {
-    //       for (int k = 0; k < K_; k++){
-    //         caffe_copy(N_, col_data + col_image_offset * (n+ num_/v*vv) + col_offset * g + N_ * k, 
-    //         col_temp_data + num_*N_*k/v + n*N_); 
-    //       }        
-    //     }
-        
-    //     caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_*num_/v, K_,
-    //       (Dtype)1., weight + weight_offset * g, col_temp_data,   
-    //       (Dtype)0., top_temp_data); 
-
-    //     for (int n = 0; n < num_/v; n++) {
-    //       for (int m = 0; m < M_; m++){
-    //         caffe_copy(N_, top_temp_data + num_ * N_ * m/v + n * N_, 
-    //         top_data + (*top)[i]->offset(n+num_/v*vv) + top_offset * g + m*N_);  
-    //       }
-    //     }
-    //   }
-
-
-    // for (int n = 0; n < num_; ++n) {
-    //   // im2col transformation: unroll input regions for filtering
-    //   // into column matrix for multplication.
-    //   im2col_gpu(bottom_data + bottom[i]->offset(n), channels_, height_,
-    //       width_, kernel_h_, kernel_w_, pad_h_, pad_w_, stride_h_, stride_w_,
-    //       col_data);
-    //   // Take inner products for groups.
-    //   for (int g = 0; g < group_; ++g) {
-    //     caffe_gpu_gemm<Dtype>(CblasNoTrans, CblasNoTrans, M_, N_, K_,
-    //       (Dtype)1., weight + weight_offset * g, col_data + col_offset * g,
-    //       (Dtype)0., top_data + (*top)[i]->offset(n) + top_offset * g);
-    //   }
     }
    
 
